@@ -1,5 +1,5 @@
 # base image
-FROM node:latest-alpine
+FROM node:12.18.2-alpine
 
 # set working directory
 WORKDIR /app
@@ -9,8 +9,8 @@ ENV PATH /app/node_modules/.bin:$PATH
 
 # install and cache app dependencies
 COPY package.json /app/package.json
+RUN npm install -g @vue/cli 
 RUN npm install
-RUN npm install @vue/cli@4.4.6 -g
 
 # start app
-CMD ["npm", "dev"]
+CMD ["npm","run", "dev"]
