@@ -1,60 +1,69 @@
 <template>
   <div id="app">
-    <img src="./assets/logo.png">
-    <h1>{{ msg }}</h1>
-    <h2>Essential Links</h2>
-    <ul>
-      <li><a href="https://vuejs.org" target="_blank">Core Docs</a></li>
-      <li><a href="https://forum.vuejs.org" target="_blank">Forum</a></li>
-      <li><a href="https://chat.vuejs.org" target="_blank">Community Chat</a></li>
-      <li><a href="https://twitter.com/vuejs" target="_blank">Twitter</a></li>
-    </ul>
-    <h2>Ecosystem</h2>
-    <ul>
-      <li><a href="http://router.vuejs.org/" target="_blank">vue-router</a></li>
-      <li><a href="http://vuex.vuejs.org/" target="_blank">vuex</a></li>
-      <li><a href="http://vue-loader.vuejs.org/" target="_blank">vue-loader</a></li>
-      <li><a href="https://github.com/vuejs/awesome-vue" target="_blank">awesome-vue</a></li>
-    </ul>
+    <label>
+      Search Crocodillians:
+      <input v-model="query"/>
+    </label>
+    <table style="width: 100%">
+      <thead>
+        <th>Name</th>
+        <th>Age</th>
+        <th>Species</th>
+        <th>Country</th>
+        <th>Likes to Eat</th>
+      </thead>
+      <tbody>
+        <tr v-for="result of queryResults">
+          <td>{{result.name}}</td>
+          <td>{{result.age}}</td>
+          <td>{{result.species}}</td>
+          <td>{{result.country}}</td>
+          <td>{{result.eats}}</td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 </template>
 
 <script>
+import fz from 'fuzzaldrin-plus';
+import Crocodilians from './crocodilians.json';
+
 export default {
   name: 'app',
-  data () {
+  data() {
     return {
-      msg: 'Welcome to Your Vue.js App'
+      query: '',
+      options: Crocodilians
+    }
+  },
+
+  computed: {
+    queryResults() {
+      if(!this.query) return this.options;
+
+      const preparedQuery = fz.prepareQuery(this.query);
+      const scores = {};
+
+      return this.options
+        .map((option, index) => {
+          const scorableFields = [
+            option.uuid,
+            option.name,
+            option.species,
+            option.country,
+            option.eats,
+            `${option.age}`,
+          ].map(toScore => fz.score(toScore, this.query, { preparedQuery }));
+
+          scores[option.uuid] = Math.max(...scorableFields);
+
+          return option;
+        })
+        .filter(option => scores[option.uuid] > 1)
+        .sort((a, b) => scores[b.uuid] - scores[a.uuid])
+      ;
     }
   }
 }
 </script>
-
-<style>
-#app {
-  font-family: 'Avenir', Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
-}
-
-h1, h2 {
-  font-weight: normal;
-}
-
-ul {
-  list-style-type: none;
-  padding: 0;
-}
-
-li {
-  display: inline-block;
-  margin: 0 10px;
-}
-
-a {
-  color: #42b983;
-}
-</style>
